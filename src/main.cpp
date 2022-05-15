@@ -1,8 +1,87 @@
+/************************************************
+ * File: main.cpp
+ * Project: Vapp
+ * Github: https://github.com/taunoe/numbr6
+ * Last edited: 15.05.2022
+ * Copyright 2022 Tauno Erik
+ ************************************************/
 #include <Arduino.h>
 
-const uint8_t LATCH_PIN = 8;
-const uint8_t CLOCK_PIN = 12;
-const uint8_t DATA_PIN = 11;
+const uint8_t LATCH_PIN = 11;  // PB3
+const uint8_t CLOCK_PIN = 12;  // PB4
+const uint8_t DATA_PIN = 8;    // PB0
+
+const uint8_t NUM_OF_NUMS = 15;
+const uint8_t NUMBERS[NUM_OF_NUMS] = {
+  0b00111111,  // 0
+  0b00000110,  // 1
+  0b01011011,  // 2
+  0b01001111,  // 3
+  0b01100110,  // 4
+  0b01101101,  // 5
+  0b01111101,  // 6
+  0b00000111,  // 7
+  0b01111111,  // 8
+  0b01101111,  // 9
+  0b01110111,  // A
+  0b01111100,  // b
+  0b01111001,  // E
+  0b01110001,  // F
+  0b01110110,  // H
+  //0b0gfedcba,  // H
+};
+
+
+// Initialize data array.
+// I have nine 7-segment LEDS.
+const uint8_t data_size = 9;
+uint8_t data[data_size] = {
+  0b00000110,  // 1
+  0b01011011,  // 2
+  0b01001111,  // 3
+  0b01100110,  // 4
+  0b01101101,  // 5
+  0b01111101,  // 6
+  0b00000111,  // 7
+  0b01111111,  // 8
+  0b01101111,  // 9
+};
+
+
+/*
+ * Copy-paste on Arduino function:
+ https://github.com/arduino/ArduinoCore-avr/blob/master/cores/arduino/wiring_shift.c
+ https://github.com/arduino/ArduinoCore-avr/blob/24e6edd475c287cdafee0a4db2eb98927ce3cf58/cores/arduino/wiring_digital.c
+ */
+void shift_out(uint8_t data_pin, uint8_t clock_pin,
+               uint8_t bit_order, uint8_t val) {
+  for (uint8_t i = 0; i < 8; i++) {
+    if (bit_order == LSBFIRST) {
+      digitalWrite(data_pin, val & 1);
+      val >>= 1;
+    } else {
+      digitalWrite(data_pin, (val & 128) != 0);
+      val <<= 1;
+    }
+  }
+}
+
+/*
+Send data to 7-segments
+*/
+void output_data(uint8_t data[], uint8_t size) {
+  for (uint8_t i = 0; i < size; i++) {
+    digitalWrite(LATCH_PIN, LOW);
+    shift_out(DATA_PIN, CLOCK_PIN, MSBFIRST, data[i]);
+    digitalWrite(LATCH_PIN, HIGH);
+  }
+}
+
+
+void modify_data(uint8_t pos, uint8_t new_data) {
+
+}
+
 
 void setup() {
   pinMode(LATCH_PIN, OUTPUT);
@@ -11,29 +90,19 @@ void setup() {
 }
 
 void loop() {
-  // count from 0 to 255 and display the number
 
-// on the LEDs
+//uint8_t num = 0b00000001;
 
-for (int numberToDisplay = 0; numberToDisplay < 256; numberToDisplay++) {
+/*
+  for (uint8_t i = 0; i < NUM_OF_NUMS; i++) {
+    digitalWrite(LATCH_PIN, LOW);
+    shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, NUMBERS[i]);
+    digitalWrite(LATCH_PIN, HIGH);
+    delay(500);
+  }
+*/
 
-// take the latchPin low so
-
-// the LEDs don't change while you're sending in bits:
-
-digitalWrite(LATCH_PIN, LOW);
-
-// shift out the bits:
-
-shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, numberToDisplay);
-
-//take the latch pin high so the LEDs will light up:
-
-digitalWrite(LATCH_PIN, HIGH);
-
-// pause before next value:
-
+output_data(data, data_size);
 delay(500);
 
-}
 }
