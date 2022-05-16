@@ -2,14 +2,14 @@
  * File: main.cpp
  * Project: Vapp
  * Github: https://github.com/taunoe/numbr6
- * Last edited: 15.05.2022
+ * Last edited: 16.05.2022
  * Copyright 2022 Tauno Erik
  ************************************************/
 #include <Arduino.h>
 
-const uint8_t LATCH_PIN = 11;  // PB3
-const uint8_t CLOCK_PIN = 12;  // PB4
-const uint8_t DATA_PIN = 8;    // PB0
+const uint8_t LATCH_PIN = 11;  // PB3; //11
+const uint8_t CLOCK_PIN = 12;  // PB4; //12
+const uint8_t DATA_PIN = 8;    // PB0; //8
 
 const uint8_t NUM_OF_NUMS = 15;
 const uint8_t NUMBERS[NUM_OF_NUMS] = {
@@ -62,24 +62,32 @@ void shift_out(uint8_t data_pin, uint8_t clock_pin,
     } else {
       digitalWrite(data_pin, (val & 128) != 0);
       val <<= 1;
-    }
+  }
+
+  //digitalWrite(clock_pin, HIGH);
+  PORTB |= (1<<4); // Set to HIGH
+  //digitalWrite(clock_pin, LOW);
+  PORTB &= ~(1<<4); // Set to LOW
   }
 }
+
 
 /*
 Send data to 7-segments
 */
 void output_data(uint8_t data[], uint8_t size) {
   for (uint8_t i = 0; i < size; i++) {
-    digitalWrite(LATCH_PIN, LOW);
+
+    PORTB &= ~(1<<3); // digitalWrite(LATCH_PIN, LOW);
+    //shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, data[i]);
     shift_out(DATA_PIN, CLOCK_PIN, MSBFIRST, data[i]);
-    digitalWrite(LATCH_PIN, HIGH);
+    PORTB |= (1<<3); // digitalWrite(LATCH_PIN, HIGH);
   }
 }
 
 
-void modify_data(uint8_t pos, uint8_t new_data) {
-
+void modify_data(uint8_t pos, uint8_t val) {
+  data[pos] = val;
 }
 
 
@@ -101,8 +109,10 @@ void loop() {
     delay(500);
   }
 */
-
-output_data(data, data_size);
-delay(500);
-
+  for (size_t i = 0; i < 10; i++) {
+    data[0] = NUMBERS[i];
+    output_data(data, data_size);
+    delay(500);
+  }
+  
 }
