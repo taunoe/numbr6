@@ -100,6 +100,24 @@ void shift_out(uint8_t data_pin, uint8_t clock_pin,
 }
 
 
+void shift_out_new(uint8_t data_pin, uint8_t clock_pin, uint8_t val) {
+  for (uint8_t i = 0; i < 8; i++) {
+    
+    uint8_t data = (val & 128) != 0;
+    
+    if (data == 0) {
+      PORTB &= ~(1);
+    } else {
+      PORTB |= 1;
+    }
+    val <<= 1;
+
+  PORTB |= (1<<4); // Set to HIGH
+  PORTB &= ~(1<<4); // Set to LOW
+  }
+}
+
+
 /*
 Send data to 7-segments
 */
@@ -108,7 +126,7 @@ void output_data(uint8_t data[], uint8_t size) {
 
     PORTB &= ~(1<<3); // digitalWrite(LATCH_PIN, LOW);
     //shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, data[i]);
-    shift_out(DATA_PIN, CLOCK_PIN, MSBFIRST, data[i]);
+    shift_out_new(DATA_PIN, CLOCK_PIN, data[i]);
     PORTB |= (1<<3); // digitalWrite(LATCH_PIN, HIGH);
   }
 }
