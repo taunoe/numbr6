@@ -2,14 +2,17 @@
  * File: main.cpp
  * Project: Vapp
  * Github: https://github.com/taunoe/numbr6
- * Last edited: 16.05.2022
+ * Last edited: 18.05.2022
  * Copyright 2022 Tauno Erik
  ************************************************/
 #include <Arduino.h>
 
-const uint8_t LATCH_PIN = 11;  // PB3; //11
-const uint8_t CLOCK_PIN = 12;  // PB4; //12
-const uint8_t DATA_PIN = 8;    // PB0; //8
+const uint8_t LATCH_PIN = 11;  // PB3; // 11
+const uint8_t CLOCK_PIN = 12;  // PB4; // 12
+const uint8_t DATA_PIN = 8;    // PB0; // 8
+
+// I have nine 7-segment LEDS.
+const uint8_t NUM_OF_7SEGS = 9;
 
 const uint8_t NUM_OF_NUMS = 15;
 const uint8_t NUMBERS[NUM_OF_NUMS] = {
@@ -31,11 +34,8 @@ const uint8_t NUMBERS[NUM_OF_NUMS] = {
   //0b0gfedcba,  // H
 };
 
-
 // Initialize data array.
-// I have nine 7-segment LEDS.
-const uint8_t data_size = 9;
-uint8_t data[data_size] = {
+uint8_t data[NUM_OF_7SEGS] = {
   0b00000110,  // 1
   0b01011011,  // 2
   0b01001111,  // 3
@@ -47,6 +47,34 @@ uint8_t data[data_size] = {
   0b01101111,  // 9
 };
 
+// Timing arrays
+uint32_t prev_time[NUM_OF_7SEGS] = {0,0,0,0,0,0,0,0,0};
+
+bool update[NUM_OF_7SEGS] = {
+  false,  // 0
+  false,  // 1
+  false,  // 2
+  false,  // 3
+  false,  // 4
+  false,  // 5
+  false,  // 6
+  false,  // 7
+  false   // 8
+};
+
+const uint32_t TIME[NUM_OF_7SEGS] = {
+  500,  // 0
+  600,  // 1
+  700,  // 2
+  800,  // 3
+  900,  // 4
+  1000, // 5
+  1100, // 6
+  1200, // 7
+  1300  // 8
+};
+
+uint8_t count[NUM_OF_7SEGS] = {0,0,0,0,0,0,0,0,0};
 
 /*
  * Copy-paste on Arduino function:
@@ -86,11 +114,6 @@ void output_data(uint8_t data[], uint8_t size) {
 }
 
 
-void modify_data(uint8_t pos, uint8_t val) {
-  data[pos] = val;
-}
-
-
 void setup() {
   pinMode(LATCH_PIN, OUTPUT);
   pinMode(CLOCK_PIN, OUTPUT);
@@ -98,21 +121,25 @@ void setup() {
 }
 
 void loop() {
+  uint32_t current_time = millis();
 
-//uint8_t num = 0b00000001;
+  for (size_t i = 0; i < NUM_OF_7SEGS; i++) {
+    if (current_time - prev_time[i] >= TIME[i]) {
+      update[i] = true;
+      prev_time[i] = current_time; 
+    }
+  }
 
-/*
-  for (uint8_t i = 0; i < NUM_OF_NUMS; i++) {
-    digitalWrite(LATCH_PIN, LOW);
-    shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, NUMBERS[i]);
-    digitalWrite(LATCH_PIN, HIGH);
-    delay(500);
+  for (size_t i = 0; i < NUM_OF_7SEGS; i++) {
+    if (update[i]) {  // Change number
+      data[i] = NUMBERS[count[i]];
+      output_data(data, NUM_OF_7SEGS);
+      count[i]++;
+      if (count[i] > 9) {
+        count[i] = 0;
+      }
+      update[i] = false;
+    }
   }
-*/
-  for (size_t i = 0; i < 10; i++) {
-    data[0] = NUMBERS[i];
-    output_data(data, data_size);
-    delay(500);
-  }
-  
+
 }
