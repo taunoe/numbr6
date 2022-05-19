@@ -2,7 +2,7 @@
  * File: main.cpp
  * Project: Vapp
  * Github: https://github.com/taunoe/numbr6
- * Last edited: 18.05.2022
+ * Last edited: 19.05.2022
  * Copyright 2022 Tauno Erik
  ************************************************/
 #include <Arduino.h>
@@ -15,6 +15,20 @@ const uint8_t DATA_PIN = 8;    // PB0; // 8
 const uint8_t NUM_OF_7SEGS = 9;
 
 const uint8_t NUM_OF_NUMS = 15;
+
+// Elements
+const uint8_t DP = 0b10000000;
+const uint8_t G  = 0b01000000;
+const uint8_t F  = 0b00100000;
+const uint8_t E  = 0b00010000;
+const uint8_t D  = 0b00001000;
+const uint8_t C  = 0b00000100;
+const uint8_t B  = 0b00000010;
+const uint8_t A  = 0b00000001;
+
+const uint8_t ELEMENTS[8] = {A, B, C, D, E, F, G, DP};
+
+// dp-g-f-e-d-c-b-a
 const uint8_t NUMBERS[NUM_OF_NUMS] = {
   0b00111111,  // 0
   0b00000110,  // 1
@@ -31,7 +45,7 @@ const uint8_t NUMBERS[NUM_OF_NUMS] = {
   0b01111001,  // E
   0b01110001,  // F
   0b01110110,  // H
-  //0b0gfedcba,  // H
+  //0bdpgfedcba,  // H
 };
 
 // Initialize data array.
@@ -64,6 +78,8 @@ bool update[NUM_OF_7SEGS] = {
   false   // 8
 };
 
+// Mode1 time to change numbers
+// Speed: higer = lower.
 const uint32_t TIME[NUM_OF_7SEGS] = {
   500,  // 0
   600,  // 1
@@ -134,7 +150,7 @@ void output_data(uint8_t data[], uint8_t size) {
 
 
 /*
-Shift data to 7-segments
+Shift data to 7-segments.
 */
 void shift_out_data(uint8_t data[]) {
   for (uint8_t segment = 0; segment < NUM_OF_7SEGS; segment++) {
@@ -159,9 +175,42 @@ void shift_out_data(uint8_t data[]) {
   }
 }
 
+
+void all_off() {
+  for (size_t i = 0; i < NUM_OF_7SEGS; i++) {
+    data[i] = 0;
+  }
+  shift_out_data(data);
+}
+
+
+void all_selected_elements_on(uint8_t element) {
+  uint8_t bit = 0;
+
+  switch (element) {
+    case DP: bit = 7; break;
+    case  G: bit = 6; break;
+    case  F: bit = 5; break;
+    case  E: bit = 4; break;
+    case  D: bit = 3; break;
+    case  C: bit = 2; break;
+    case  B: bit = 1; break;
+    case  A: bit = 0; break;
+    default: break;
+  }
+
+  for (size_t i = 0; i < NUM_OF_7SEGS; i++) {
+    data[i] |= (1<<bit);
+  }
+  shift_out_data(data);
+}
+
 /*
+  Mode 1
+  Muudab kõiki numbreid kasvas järjekorras.
+  Igal numbril on oma kiirus.
 */
-void mode1() {
+void run_mode1() {
   // Timing
   for (size_t i = 0; i < NUM_OF_7SEGS; i++) {
     if (current_time - prev_time[i] >= TIME[i]) {
@@ -186,41 +235,38 @@ void mode1() {
 }
 
 
+/*
+Mode2
+Blink all elements at once.
+*/
+void run_mode2() {
+  for (uint8_t i = 0; i < 8; i++){
+    all_off();
+    delay(500);
+    all_selected_elements_on(ELEMENTS[i]);
+    delay(500);
+  }
+}
+
+/*
+Blink dots_one_by_one
+Bottom to top.
+*/
+
+
 void setup() {
   pinMode(LATCH_PIN, OUTPUT);
   pinMode(CLOCK_PIN, OUTPUT);
   pinMode(DATA_PIN, OUTPUT);
+
+  all_off();
+  delay(100);
 }
 
 void loop() {
   current_time = millis();
 
-  mode1();
-
-  /******
-  Mode 1
-  *******/
- /*
-  for (size_t i = 0; i < NUM_OF_7SEGS; i++) {
-    if (current_time - prev_time[i] >= TIME[i]) {
-      update[i] = true;
-      prev_time[i] = current_time; 
-    }
-  }
-
-  // Update 9 7-SEGMENTS
-  for (size_t i = 0; i < NUM_OF_7SEGS; i++) {
-    if (update[i]) {
-      data[i] = NUMBERS[count[i]];
-      //output_data(data, NUM_OF_7SEGS);
-      shift_out_data(data);
-      count[i]++;
-      if (count[i] > 9) {
-        count[i] = 0;
-      }
-      update[i] = false;
-    }
-  }
-  */
+  //run_mode1();
+  run_mode2();
 
 }
