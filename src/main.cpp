@@ -48,6 +48,8 @@ uint8_t data[NUM_OF_7SEGS] = {
 };
 
 // Timing arrays
+uint32_t current_time = 0;
+
 uint32_t prev_time[NUM_OF_7SEGS] = {0,0,0,0,0,0,0,0,0};
 
 bool update[NUM_OF_7SEGS] = {
@@ -100,7 +102,7 @@ void shift_out(uint8_t data_pin, uint8_t clock_pin,
 }
 
 
-void shift_out_new(uint8_t data_pin, uint8_t clock_pin, uint8_t val) {
+void shift_out_new(uint8_t val) {
   for (uint8_t i = 0; i < 8; i++) {
     
     uint8_t data = (val & 128) != 0;
@@ -123,11 +125,63 @@ Send data to 7-segments
 */
 void output_data(uint8_t data[], uint8_t size) {
   for (uint8_t i = 0; i < size; i++) {
-
     PORTB &= ~(1<<3); // digitalWrite(LATCH_PIN, LOW);
     //shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, data[i]);
-    shift_out_new(DATA_PIN, CLOCK_PIN, data[i]);
+    shift_out_new(data[i]);
     PORTB |= (1<<3); // digitalWrite(LATCH_PIN, HIGH);
+  }
+}
+
+
+/*
+Shift data to 7-segments
+*/
+void shift_out_data(uint8_t data[]) {
+  for (uint8_t segment = 0; segment < NUM_OF_7SEGS; segment++) {
+    PORTB &= ~(1<<3);  // digitalWrite(LATCH_PIN, LOW);
+    //shift_out_new(DATA_PIN, CLOCK_PIN, data[i]);
+    //
+    uint8_t d = data[segment];
+    for (uint8_t i = 0; i < 8; i++) {
+      uint8_t bit = (d & 128) != 0;
+      if (bit == 0) {
+        PORTB &= ~(1);
+      } else {
+        PORTB |= 1;
+      }
+      d <<= 1;
+
+      PORTB |= (1<<4);   // Set to HIGH
+      PORTB &= ~(1<<4);  // Set to LOW
+    }
+    //
+    PORTB |= (1<<3);  // digitalWrite(LATCH_PIN, HIGH);
+  }
+}
+
+/*
+*/
+void mode1() {
+  // Timing
+  for (size_t i = 0; i < NUM_OF_7SEGS; i++) {
+    if (current_time - prev_time[i] >= TIME[i]) {
+      update[i] = true;
+      prev_time[i] = current_time; 
+    }
+  }
+
+  // Update 9 7-SEGMENTS
+  for (size_t i = 0; i < NUM_OF_7SEGS; i++) {
+    if (update[i]) {
+      data[i] = NUMBERS[count[i]];
+      //output_data(data, NUM_OF_7SEGS);
+      shift_out_data(data);
+      count[i]++;
+      if (count[i] > 9) {
+        count[i] = 0;
+      }
+      update[i] = false;
+    }
   }
 }
 
@@ -139,8 +193,14 @@ void setup() {
 }
 
 void loop() {
-  uint32_t current_time = millis();
+  current_time = millis();
 
+  mode1();
+
+  /******
+  Mode 1
+  *******/
+ /*
   for (size_t i = 0; i < NUM_OF_7SEGS; i++) {
     if (current_time - prev_time[i] >= TIME[i]) {
       update[i] = true;
@@ -148,10 +208,12 @@ void loop() {
     }
   }
 
+  // Update 9 7-SEGMENTS
   for (size_t i = 0; i < NUM_OF_7SEGS; i++) {
-    if (update[i]) {  // Change number
+    if (update[i]) {
       data[i] = NUMBERS[count[i]];
-      output_data(data, NUM_OF_7SEGS);
+      //output_data(data, NUM_OF_7SEGS);
+      shift_out_data(data);
       count[i]++;
       if (count[i] > 9) {
         count[i] = 0;
@@ -159,5 +221,6 @@ void loop() {
       update[i] = false;
     }
   }
+  */
 
 }
