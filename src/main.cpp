@@ -1,15 +1,19 @@
 /************************************************
  * File: main.cpp
  * Project: Vapp
+ * MCU Board: Arduino Pro Micro (BTE13-010B, www.betemcu.cn)
+ * PIR sensor HC-SR501
  * Github: https://github.com/taunoe/numbr6
- * Last edited: 19.05.2022
+ * Last edited: 20.05.2022
+ * 
  * Copyright 2022 Tauno Erik
  ************************************************/
 #include <Arduino.h>
 
-const uint8_t LATCH_PIN = 11;  // PB3; // 11
-const uint8_t CLOCK_PIN = 12;  // PB4; // 12
-const uint8_t DATA_PIN = 8;    // PB0; // 8
+const uint8_t LATCH_PIN = 11;       // PB3; // 11
+const uint8_t CLOCK_PIN = 12;       // PB4; // 12
+const uint8_t DATA_PIN = 8;         // PB0; // 8
+const uint8_t PIR_SENSOR_PIN = 19;  // A6
 
 // I have nine 7-segment LEDS.
 const uint8_t NUM_OF_7SEGS = 9;
@@ -258,15 +262,19 @@ void setup() {
   pinMode(LATCH_PIN, OUTPUT);
   pinMode(CLOCK_PIN, OUTPUT);
   pinMode(DATA_PIN, OUTPUT);
+  pinMode(PIR_SENSOR_PIN, INPUT);
 
   all_off();
+  delay(100);
+  // Test 7-segments elements
+  run_mode2();
   delay(100);
 }
 
 void loop() {
   current_time = millis();
 
-  //run_mode1();
-  run_mode2();
+  run_mode1();
+  //run_mode2();
 
 }
